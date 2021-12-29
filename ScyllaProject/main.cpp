@@ -9,8 +9,8 @@ int main()
 	std::vector<int> newVec = a.f(vec);
 
 	std::cout << "*******************************"<<std::endl;
-	for (const auto it : newVec)
+	for (const auto& element : newVec)
 	{
-		std::cout << it << " ";
+		std::cout << element << " ";
 	}
 }
