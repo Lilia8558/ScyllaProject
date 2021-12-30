@@ -20,7 +20,7 @@ private:
 	std::mutex mutex_;
 	bool ready_{ false };
 private:
-	std::vector<std::pair<int, int>> split_vector(int vec_size);
+	std::vector<std::pair<int, int>> split_vector(const int vec_size);
 };
 
 template<typename T>
@@ -54,7 +54,7 @@ std::vector<T> Vector_Processor::process(const std::vector<T>& vec)
 	return std::move(new_vec);
 }
 
-std::vector<std::pair<int, int>> Vector_Processor::split_vector(int vec_size)
+std::vector<std::pair<int, int>> Vector_Processor::split_vector(const int vec_size)
 {
 	const int div = vec_size / num_threads;
 	const int mod = vec_size % num_threads;

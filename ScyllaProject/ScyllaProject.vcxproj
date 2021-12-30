@@ -123,7 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ScyllaTask.h" />
+    <ClInclude Include="VectorProcessor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
