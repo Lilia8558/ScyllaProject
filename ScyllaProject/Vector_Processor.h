@@ -1,7 +1,7 @@
 #pragma once
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -16,11 +16,13 @@ public:
 private:
 	std::vector<std::thread> processors_;
 
+	const int multiplier = 5;
 	std::condition_variable condition_;
 	std::mutex mutex_;
 	bool ready_{ false };
 private:
-	std::vector<std::pair<int, int>> split_vector(const int vec_size);
+	using pair_array = std::vector<std::pair<int, int>>;
+	pair_array split_vector(const int vec_size);
 };
 
 template<typename T>
@@ -34,12 +36,13 @@ std::vector<T> Vector_Processor::process(const std::vector<T>& vec)
 		{
 			std::unique_lock<std::mutex> localLock(mutex_);
 			condition_.wait(localLock, [this]() { return ready_; });
-			new_vec.push_back(vec[i] * 5);
+			assert(i >= 0 && i < vec.size() && "Error: Incorrect index.");
+			new_vec.push_back(vec[i] * multiplier);
 		}
 	};
 
 	auto indexes = split_vector(vec.size());
-	for (const auto pair : indexes)
+	for (const auto& pair : indexes)
 	{
 		processors_.emplace_back(std::thread(multiply, pair.first, pair.second));
 		{
@@ -54,15 +57,15 @@ std::vector<T> Vector_Processor::process(const std::vector<T>& vec)
 	return std::move(new_vec);
 }
 
-std::vector<std::pair<int, int>> Vector_Processor::split_vector(const int vec_size)
+Vector_Processor::pair_array Vector_Processor::split_vector(const int vec_size)
 {
 	const int div = vec_size / num_threads;
 	const int mod = vec_size % num_threads;
 	int index = 0;
 
-	assert(vec_size >= num_threads);
+	assert(vec_size >= num_threads && "Error: Incorrect vector size.");
 
-	std::vector<std::pair<int, int>> splited_vec_indexes;
+	pair_array splited_vec_indexes;
 
 	for (int i = 0; i < num_threads - 1; ++i)
 	{
@@ -71,5 +74,5 @@ std::vector<std::pair<int, int>> Vector_Processor::split_vector(const int vec_si
 	}
 	splited_vec_indexes.emplace_back(index, index + mod);
 
-	return splited_vec_indexes;
+	return std::move(splited_vec_indexes);
 }

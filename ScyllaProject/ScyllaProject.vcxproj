@@ -123,7 +123,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="VectorProcessor.h" />
+    <ClInclude Include="Vector_Processor.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
