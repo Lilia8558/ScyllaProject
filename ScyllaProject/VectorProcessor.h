@@ -6,11 +6,11 @@
 #include <thread>
 #include <vector>
 
-class A
+class Vector_Processor
 {
 public:
 	template<typename T>
-	std::vector<T> f(const std::vector<T>& vec);
+	std::vector<T> process(const std::vector<T>& vec);
 public:
 	static constexpr int num_threads = 8;
 private:
@@ -24,7 +24,7 @@ private:
 };
 
 template<typename T>
-std::vector<T> A::f(const std::vector<T>& vec)
+std::vector<T> Vector_Processor::process(const std::vector<T>& vec)
 {
 	std::vector<T> new_vec;
 
@@ -36,7 +36,6 @@ std::vector<T> A::f(const std::vector<T>& vec)
 			condition_.wait(localLock, [this]() { return ready_; });
 			new_vec.push_back(vec[i] * 5);
 		}
-
 	};
 
 	auto indexes = split_vector(vec.size());
@@ -55,7 +54,7 @@ std::vector<T> A::f(const std::vector<T>& vec)
 	return std::move(new_vec);
 }
 
-std::vector<std::pair<int, int>> A::split_vector(int vec_size)
+std::vector<std::pair<int, int>> Vector_Processor::split_vector(int vec_size)
 {
 	const int div = vec_size / num_threads;
 	const int mod = vec_size % num_threads;
