@@ -1,10 +1,11 @@
 #pragma once
 
 #include <iostream>
-#include <vector>
-#include <thread>
+#include <cassert>
 #include <functional>
 #include <mutex>
+#include <thread>
+#include <vector>
 
 class A
 {
@@ -15,46 +16,62 @@ public:
 	static constexpr int num_threads = 8;
 private:
 	std::vector<std::thread> processors_;
-	std::mutex mutex_;
 
-	std::function<void(int, int)> multiply;
+	std::condition_variable condition_;
+	std::mutex mutex_;
+	bool ready_{ false };
+private:
+	std::vector<std::pair<int, int>> split_vector(int vec_size);
 };
 
 template<typename T>
 std::vector<T> A::f(const std::vector<T>& vec)
 {
-
 	std::vector<T> new_vec;
-	//std::cout << "NUM is: " << num << std::endl;
-	int index = 0;
 
-	multiply = [&vec, &new_vec, this](int start, int end)
+	auto multiply = [&vec, &new_vec, this](int start, int end)
 	{
 		for (int i = start; i <= end; ++i)
 		{
-			std::lock_guard<std::mutex> myLock(mutex_);
+			std::unique_lock<std::mutex> localLock(mutex_);
+			condition_.wait(localLock, [this]() { return ready_; });
 			new_vec.push_back(vec[i] * 5);
 		}
 
-		std::cout << "From Thread ID : " << std::this_thread::get_id() << "\n";
 	};
 
-	const int num = vec.size() / num_threads;
-	for (int i = 0; i < num_threads; ++i)
+	auto indexes = split_vector(vec.size());
+	for (const auto pair : indexes)
 	{
-		//std::cout << "start: " << index << "*********" << "end: " << index + num - 1 << std::endl;
-
-		processors_.emplace_back(std::thread(multiply, index, index + num - 1));
-		index += num;
-	}
-
-	for (std::thread& th : processors_)
-	{
-		if (th.joinable())
+		processors_.emplace_back(std::thread(multiply, pair.first, pair.second));
 		{
-			th.join();
+			std::lock_guard<std::mutex> localLock(mutex_);
+			ready_ = true;
 		}
+
+		processors_[processors_.size() - 1].join();
+		condition_.notify_one();
 	}
 
 	return std::move(new_vec);
+}
+
+std::vector<std::pair<int, int>> A::split_vector(int vec_size)
+{
+	const int div = vec_size / num_threads;
+	const int mod = vec_size % num_threads;
+	int index = 0;
+
+	assert(vec_size >= num_threads);
+
+	std::vector<std::pair<int, int>> splited_vec_indexes;
+
+	for (int i = 0; i < num_threads - 1; ++i)
+	{
+		splited_vec_indexes.emplace_back(index, index + div - 1);
+		index += div;
+	}
+	splited_vec_indexes.emplace_back(index, index + mod);
+
+	return splited_vec_indexes;
 }
